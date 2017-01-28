@@ -1,0 +1,8 @@
+[14:25:25][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:25][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:25][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:25][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:25][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:25][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:56][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
+[14:25:56][@INFORMATION] Line: 22 in file Z:\home\mycms.loc\www\core\main.php #test#
