@@ -46,7 +46,7 @@ class myRequest extends myClass {
 
 	public function getVariables() {
 		if($this->_vars === null) {
-			$this->_vars = parse_str($this->_content, $this->getRequestContent());
+			parse_str($this->getRequestContent(), $this->_vars);
 		}
 		return $this->_vars;
 	}

@@ -30,7 +30,9 @@ class myBaseController extends myClass {
 			if(array_key_exists($action, $this->properties['actions'])) {
 				$action_class_name = $this->properties['actions'][$action];
 				$this->_actions[$action] = new $action_class_name($this);
-				$this->_actions[$action]->__ACTION_NAME__ = end(explode('.', $action));
+
+				$cmp = explode('.', $action);
+				$this->_actions[$action]->__ACTION_NAME__ = end($cmp);
 			} else {
 				return false;
 			}

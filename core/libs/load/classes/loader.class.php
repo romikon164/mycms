@@ -542,11 +542,13 @@ class myLoader extends myClass {
 	}
 
 	public function getComponentShortname($name) {
-		return end(explode('.', $name));
+	    $cmp = explode('.', $name);
+		return end($cmp);
 	}
 
 	public function useComponentNamespace($fullname) {
-		$this->setNamespace(array_shift(explode('.', $fullname)));
+	    $cmp = explode('.', $fullname);
+		$this->setNamespace(array_shift($cmp));
 	}
 }
 
