@@ -1,6 +1,6 @@
 <?php 
 return array (
-	'classes' => array (),
+	'classes' => array ('core.controller'),
 	'includes' => '',
 	'libs' => '',
 );

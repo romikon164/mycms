@@ -10,24 +10,34 @@ class myCMS extends mySingleton {
 		$this->log = $this->load->library('core.log');
 		$this->db = $this->load->library('core.db');
 		$this->model = $this->load->library('core.model');
-		session_start();
 		$this->load_settings();
 		$this->load_plugins();
-		$this->load_user();
 		$this->lang = $this->load->library('core.lang');
 		$this->request = $this->load->library('core.request');
 		$this->response = $this->load->library('core.response');
+		session_start();
+		$this->load_user();
 	}
 
-	public function run() {
+	public function run($is_print = false) {
 		$this->invokeEvent('OnInitialize');
-		$this->request->handleRequest();
+		$content = $this->request->handleRequest();
+		@session_write_close();
+		if($is_print) {
+			echo $content;
+		} else {
+			return $content;
+		}
 	}
 
 	public function invokeEvent($event_name, $properties = array ()) {
+		$properties['plugin_sucess'] = true;
 		if(array_key_exists($event_name, $this->events)) {
 			foreach($this->events[$event_name] as $plugin) {
 				$properties = $this->load->event($plugin, $event_name, $properties);
+				if(!$properties['plugin_success']) {
+					break;
+				}
 			}
 		}
 

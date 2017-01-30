@@ -21,15 +21,27 @@ return array (
 			'dbtype' => 'varchar',
 			'length' => 255,
 		),
-		'method' => array (
+		'default_action' => array (
 			'default' => '',
 			'phptype' => 'text',
 			'dbtype' => 'varchar',
 			'length' => 255,
 		),
+		'access_level' => array (
+			'default' => '0',
+			'phptype' => 'tinyiny',
+			'dbtype' => 'integer',
+			'length' => 1,
+		),
 	),
 	'master' => array (
 	),
 	'slave' => array (
+		'Actions' => array (
+			'model' => 'core.rootaction',
+			'internal' => 'id',
+			'external' => 'root_id',
+			'conformity' => 'many',
+		),
 	),
 );

@@ -52,16 +52,20 @@ class myModelUser extends myModel {
 		}
 	}
 
-	public function checkPolicy($type = null, $value = null) {
-		if($value === null) {
-			if($type === null) {
+	public function checkPermission($access_level = null) {
+		return ($access_level !== null ? $access_level : myCMS::gI()->response->getPermission() * 100) <= $this->getPermission();
+	}
 
-			} else {
-				
-			}
-		} else {
-
-		}
+	public function getPermission() {
+		$query = myCMS::gI()->db->newQuery('core.usergroup');
+		$query->join('core.usergroupmember', null, 'usergroupmember.group_id=usergroup.id');
+		$query->where(array (
+			'usergroupmember.user_id' => $this->get('id'),
+			'OR:usergroup.id' => '1',
+		));
+		$query->select(array ('MAX(`usergroup`.`access_level`)'));
+		$query = $query->execute();
+		return intval($query->fetch(PDO::FETCH_COLUMN));
 	}
 
 	public function generatePassword($password, $createdon = null) {

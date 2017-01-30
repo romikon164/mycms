@@ -16,7 +16,7 @@ return array (
 			'length' => 0,
 		),
 		'updatedon' => array (
-			'default' => '',
+			'default' => '1970-01-01',
 			'phptype' => 'text',
 			'dbtype' => 'datetime',
 			'length' => 0,

@@ -1,6 +1,6 @@
 <?php 
 return array (
 	'default_method' => 'view',
-	'parent' => '',
+	'parent' => 'core.page',
 	'type' => 'controller',
 );

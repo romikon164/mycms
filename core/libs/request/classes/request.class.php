@@ -5,7 +5,7 @@ class myRequest extends myClass {
 	private $_headers = null;
 	private $_contentTypes = null;
 	private $_request_var = '__route__';
-	private $_request_value = '/';
+	private $_request_value = '';
 
 	function __construct($properties = array ()) {
 		parent::__construct($properties);
@@ -16,29 +16,13 @@ class myRequest extends myClass {
 	public function handleRequest() {
 		myCMS::gI()->invokeEvent('OnHandleRequest');
 		$this->_request_var = myCMS::gI()->getOption('core.request_get_param', '__route__');
-		$this->_request_value = $this->getVar($this->_request_var);
+		$this->_request_value = trim($this->getVar($this->_request_var), '/');
 
-		$this->detectRoot();
-		$this->detectController();
-		$this->detectMethod();
-		$this->detectArguments();
-
-		myCMS::gI()->response->handleResponse();
+		return myCMS::gI()->response->handleResponse();
 	}
 
-	private function detectRoot() {
-
-	}
-	private function detectController() {
-
-	}
-
-	private function detectMethod() {
-
-	}
-
-	private function detectArguments() {
-
+	public function getRequest() {
+		return $this->_request_value;
 	}
 
 	public function getVar($name, $method = null) {
@@ -124,9 +108,7 @@ class myRequest extends myClass {
 	}
 
 	public function issetContentType($type) {
-		/*list($groupType, $subType) = explode('/', $type);*/
-
-		return /*in_array($groupType.'/*', $this->getContentTypes()) || */in_array($type, $this->getContentTypes());
+		return in_array($type, $this->getContentTypes());
 	}
 
 	public function get($name) {

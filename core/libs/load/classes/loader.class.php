@@ -10,6 +10,7 @@ class myLoader extends myClass {
 	private $plugins = array ();
 	private $components = array ();
 	private $models = array ();
+	private $controllers = array ();
 
 	private $namespace = null;
 	private $namespace_path = null;
@@ -19,6 +20,47 @@ class myLoader extends myClass {
 
 		$this->namespace = 'core';
 		$this->namespace_path = CMS_CORE_PATH;
+	}
+
+	private function load_required($required_file, $path = null) {
+		if(is_array($required_file)) {
+			$required = $required_file;
+		} else {
+			$required = $this->file($required_file, $path, myLoader::L_RETURNED);
+			$path = null;
+		}
+
+		if(is_array($required)) {
+			foreach($required as $type_required => $required_list) {
+				switch($type_required) {
+					case 'classes':
+						if(is_array($required_list)) {
+							foreach($required_list as $required_item) {
+								$this->myclass($required_item, null, $path);
+							}
+						}
+						break;
+					case 'libs':
+						if(is_array($required_list)) {
+							foreach($required_list as $required_item) {
+								$this->library($required_item, null, $path);
+							}
+						}
+						break;
+					case 'includes':
+						if(is_array($required_list)) {
+							foreach($required_list as $required_item) {
+								$this->file($required_item, $path);
+							}
+						}
+						break;
+				}
+			}
+
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public function library($name, $properties = array(), $path = null) {
@@ -33,35 +75,7 @@ class myLoader extends myClass {
 			$path = $this->getComponentPath($fullname, 'libs', $path);
 
 			$lib_config = $this->file('config.php', $path, myLoader::L_RETURNED);
-			$lib_required = $this->file('required.php', $path, myLoader::L_RETURNED);
-
-			if(is_array($lib_required)) {
-				foreach($lib_required as $type_required => $required_list) {
-					switch($type_required) {
-						case 'classes':
-							if(is_array($required_list)) {
-								foreach($required_list as $required_item) {
-									$this->myclass($required_item);
-								}
-							}
-							break;
-						case 'libs':
-							if(is_array($required_list)) {
-								foreach($required_list as $required_item) {
-									$this->library($required_item);
-								}
-							}
-							break;
-						case 'includes':
-							if(is_array($required_list)) {
-								foreach($required_list as $required_item) {
-									$this->file($required_item);
-								}
-							}
-							break;
-					}
-				}
-			}
+			$lib_required = $this->load_required('required.php', $path);
 
 			if(is_array($lib_config) && is_array($properties)) {
 				$properties = array_merge($lib_config, $properties);
@@ -89,17 +103,25 @@ class myLoader extends myClass {
 					}
 				}
 
-				if(is_array($properties) && array_key_exists('main_class', $lib_data)) {
+				if(array_key_exists('main_class', $lib_data)) {
 					$class_name = $this->getComponentFullname($lib_data['main_class']);
 					if(array_key_exists($class_name, $this->classes)) {
-						$class_name = $this->classes[$class_name];
+						$this->libs[$fullname] = $class_name = $this->classes[$class_name];
 					}
-					if(class_exists($class_name)) {
-						$result = new $class_name($properties);
+					if(class_exists($class_name) && is_array($properties)) {
+						$this->libs[$fullname] = $result = new $class_name($properties);
 					}
+				} else {
+					$result = true;
 				}
 			}
-		}		
+		} else {
+			if(is_array($properties) && is_string($this->libs[$fullname]) && class_exists($this->libs[$fullname])) {
+				$this->libs[$fullname] = $result = new $class_name($properties);
+			}
+			
+			$result = $this->libs[$fullname];
+		}
 
 		$this->namespace = $_namespace;
 		$this->namespace_path = $_namespace_path;
@@ -123,12 +145,111 @@ class myLoader extends myClass {
 		if($properties !== null && class_exists($class_name)) {
 			return new $class_name($properties);
 		} else {
-			return $class_name;
+			return $class_name ? $class_name : false;
 		}
 	}
 
 	public function component($name, $properties = array(), $path = null) {
+		$fullname = $this->getComponentFullname($name);
+		$shortname = $this->getComponentShortname($name);
+	}
 
+	public function controller($name, $properties = array (), $path = null) {
+		$result = null;
+		$_namespace = $this->namespace;
+		$_namespace_path = $this->namespace_path;
+
+		$fullname = $this->getComponentFullname($name);
+		$shortname = $this->getComponentShortname($name);
+		if(!array_key_exists($fullname, $this->controllers)) {
+			$this->useComponentNamespace($fullname);
+			$path = $this->getComponentPath($fullname, 'controllers', $path);
+
+			$controller_config = $this->file('config.php', $path, myLoader::L_RETURNED);
+			$controller_required = $this->load_required('required.php', $path);
+
+			if(is_array($controller_config) && is_array($properties)) {
+				$controller_config = array_merge($controller_config, $properties);
+			}
+
+			$controller_data = $this->file('main.php', $path, myLoader::L_RETURNED);
+			$controller_config['actions'] = array ();
+			$controller_config['shortname'] = $shortname;
+			$controller_config['fullname'] = $fullname;
+
+			if(is_array($controller_data)) {
+				foreach($controller_data as $type_data => $data_list) {
+					switch($type_data) {
+						case 'classes':
+							if(is_array($data_list)) {
+								foreach($data_list as $data_item) {
+									$this->myclass($data_item, null, $path.'classes/');
+								}
+							}
+							break;
+						case 'includes':
+							if(is_array($data_list)) {
+								foreach($data_list as $data_item) {
+									$this->file($data_item.'.inc.php', $path.'includes/');
+								}
+							}
+							break;
+						case 'actions':
+							if(is_array($data_list)) {
+								foreach($data_list as $data_item) {
+									if($action_class = $this->file($data_item.'.action.php', $path.'actions/', myLoader::L_RETURNED)) {
+										$controller_config['actions'][$data_item] = $action_class;
+									}
+								}
+							}
+							break;
+					}
+				}
+
+				if( is_array($controller_config) && 
+					array_key_exists('parent', $controller_config) && 
+					$controller_config['parent']) {
+					$parent_config = $this->controller($controller_config['parent'], null);
+					if($parent_config) {
+						if(is_array($parent_config) && array_key_exists('actions', $parent_config)) {
+							$controller_config['actions'] = array_merge($parent_config['actions'], $controller_config['actions']);
+						}
+					} else {
+						/*trigger_error('Не найден родительский контроллер: '.$controller_config['parent']);*/
+					}
+				}
+
+				if(is_array($controller_config) && array_key_exists('type', $controller_config)) {
+					$class_name = $this->getComponentFullname($controller_config['type']);
+					if(array_key_exists($class_name, $this->classes)) {
+						$controller_config['controller_object'] = $class_name = $this->classes[$class_name];
+					}
+					if(class_exists($class_name) && is_array($properties)) {
+						$result = $controller_config['controller_object'] = new $class_name($controller_config);
+						$this->controllers[$fullname] = $controller_config;
+					} else {
+						$result = class_exists($class_name) ? ($this->controllers[$fullname] = $controller_config) : null;
+					}
+				}
+			}
+		} else {
+			$controller_config = $this->controllers[$fullname];
+			if(is_array($properties)) {
+				$controller_config = $properties = array_merge($controller_config, $properties);
+			}
+			if( is_array($properties) && 
+				isset($this->controllers[$fullname]['controller_object']) &&
+				is_string($this->controllers[$fullname]['controller_object']) && 
+				class_exists($this->controllers[$fullname]['controller_object'])) {
+				$this->controllers[$fullname]['controller_object'] = $result = new $class_name($properties);
+			}
+			
+			$result = $this->controllers[$fullname]['controller_object'];
+		}	
+
+		$this->namespace = $_namespace;
+		$this->namespace_path = $_namespace_path;
+		return $result;
 	}
 
 	public function getModelNameByClassName($name) {
@@ -213,33 +334,7 @@ class myLoader extends myClass {
 			$plugin_required = $this->file('required.php', $path, myLoader::L_RETURNED);
 			$plugin_events = array ();
 
-			if(is_array($plugin_required)) {
-				foreach($plugin_required as $type_required => $required_list) {
-					switch($type_required) {
-						case 'classes':
-							if(is_array($required_list)) {
-								foreach($required_list as $required_item) {
-									$this->myclass($required_item);
-								}
-							}
-							break;
-						case 'libs':
-							if(is_array($required_list)) {
-								foreach($required_list as $required_item) {
-									$this->library($required_item);
-								}
-							}
-							break;
-						case 'includes':
-							if(is_array($required_list)) {
-								foreach($required_list as $required_item) {
-									$this->file($required_item);
-								}
-							}
-							break;
-					}
-				}
-			}
+			$plugin_required = $this->load_required('required.php', $path);
 
 			if(is_array($plugin_config) && is_array($properties)) {
 				$properties = array_merge($plugin_config, $properties);
@@ -305,10 +400,7 @@ class myLoader extends myClass {
 		}
 
 		if(is_array($events) && array_key_exists($event_name, $events)) {
-			$result = $this->file($events[$event_name], null);
-			if($result === null) {
-				$result = true;
-			}
+			$result = $this->file($events[$event_name], null, myLoader::L_RETURNED);
 			$properties['plugin_success'] = $result;
 		} else {
 			$properties['plugin_success'] = false;
@@ -318,6 +410,34 @@ class myLoader extends myClass {
 		$this->namespace_path = $_namespace_path;
 
 		return $properties;
+	}
+
+	public function template($controller = null, $action = null, $path = null, $is_included = true) {
+		$root = myCMS::gI()->response->root();
+		if($controller == null && $root != null) {
+			$controller = $root->get('controller');
+		}
+
+		if($action == null && $root != null) {
+			$action = $root->get('default_action');
+		}
+
+		if($path == null) {
+			$path = $this->getControllerDefaultTemplateDir($controller);
+		}
+
+		if($is_included) {
+			$this->file($action.'.tpl', $path);
+		} else {
+			$path = $path.$action.'.tpl';
+			return file_exists($path) ? $path : null;
+		}
+	}
+
+	public function getControllerDefaultTemplateDir($controller) {
+		$controller = $this->getComponentFullname($controller);
+		list($namespace, $controller) = explode('.', $controller);
+		return $this->getComponentPath($controller, 'controllers').'templates/';
 	}
 
 	public function file($name, $path = null, $mode = myLoader::L_DEFAULT) {
@@ -333,12 +453,13 @@ class myLoader extends myClass {
 				return require $path;
 			case myLoader::L_ONCE:
 				require_once $path;
-				break;
 			case myLoader::L_ALL:
 				return require_once $path;
 			default:
 				require $path;
 		}
+
+		return true;
 	}
 
 	public function setNamespace($namespace, $path = null) {
@@ -380,6 +501,9 @@ class myLoader extends myClass {
 			case 'plugins':
 				$path = $this->getNamespacePath($namespace).'plugins/';
 				break;
+			case 'controllers':
+				$path = $this->getNamespacePath($namespace).'controllers/';
+				break;
 			default:
 				$path = $this->getNamespacePath($namespace);
 		}
@@ -400,6 +524,7 @@ class myLoader extends myClass {
 				case 'libs':
 				case 'models':
 				case 'plugins':
+				case 'controllers':
 				default:
 					$path = $this->getPath($type, $namespace).$name.'/';
 			}

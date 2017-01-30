@@ -1,2 +1,2 @@
 <?php 
-var_dump(is_numeric("1"));
+var_dump(file_exists('http://mycms.loc/test.php'));
